@@ -2,7 +2,14 @@ import {Logger} from "./logging";
 import Year from "./year";
 import Month from "./month";
 import {Note} from "./note";
-import {CalendarTemplate, NoteCategory, NoteTemplate, SimpleCalendarSocket} from "../interfaces";
+import {
+    CalendarConfiguration,
+    CalendarTemplate,
+    GeneralSettings,
+    NoteCategory,
+    NoteTemplate,
+    SimpleCalendarSocket
+} from "../interfaces";
 import {SimpleCalendarConfiguration} from "./simple-calendar-configuration";
 import {GameSettings} from "./game-settings";
 import {Weekday} from "./weekday";
@@ -10,10 +17,10 @@ import {SimpleCalendarNotes} from "./simple-calendar-notes";
 import HandlebarsHelpers from "./handlebars-helpers";
 import {
     GameWorldTimeIntegrations,
-    ModuleSocketName,
     SimpleCalendarHooks,
     SocketTypes,
-    TimeKeeperStatus
+    TimeKeeperStatus,
+    YearNamingRules
 } from "../constants";
 import Importer from "./importer";
 import Season from "./season";
@@ -49,6 +56,8 @@ export default class SimpleCalendar extends Application{
     public noteCategories: NoteCategory[] = [];
 
     public calendars: Calendar[] = [];
+
+    public currentCalendar: number = -1;
 
     /**
      * The CSS class associated with the animated clock
@@ -1006,6 +1015,49 @@ export default class SimpleCalendar extends Application{
         }
     }
 
+    public loadCalendarConfiguration(){
+        const calendars = GameSettings.LoadCalendarConfiguration();
+
+        //If there are calendar configuration items saved then saved data is more recent
+        if(calendars.length){
+            for(let i = 0; i < calendars.length; i++){
+                const nCal = new Calendar(calendars[i]);
+                this.calendars.push(nCal);
+            }
+        }
+        //Otherwise we need to load data in the old way OR its a new install and we need to configure things for the first time
+        else {
+            const defaultCalendar: CalendarConfiguration = {
+                name: 'Calendar',
+                generalSettings: {
+                    gameWorldTimeIntegration: GameWorldTimeIntegrations.Mixed,
+                    showClock: true,
+                    pf2eSync: true,
+                    permissions: {
+                        viewCalendar: {player: true, trustedPlayer: true, assistantGameMaster: true, users: undefined},
+                        addNotes: {player: false, trustedPlayer: false, assistantGameMaster: false, users: undefined},
+                        reorderNotes: {player: false, trustedPlayer: false, assistantGameMaster: false, users: undefined},
+                        changeDateTime: {player: false, trustedPlayer: false, assistantGameMaster: false, users: undefined}
+                    }
+                },
+                year: {
+                    numericRepresentation: new Date().getFullYear(),
+                    yearZero: 1970,
+                    firstWeekday: 0,
+                    showWeekdayHeadings: true,
+                    prefix: '',
+                    postfix: '',
+                    yearNames:[],
+                    yearNamesStart: 0,
+                    yearNamingRule: YearNamingRules.Default
+                }
+            };
+            const nCal = new Calendar(defaultCalendar);
+            nCal.loadLegacyConfiguration(); // Check if any legacy configuration data exists then load it instead of the default calendar
+            this.calendars.push(nCal);
+        }
+    }
+
     /**
      * Called when a setting is updated, refreshes the configurations for all types
      * @param {boolean} [update=false] If to update the display
@@ -1043,6 +1095,7 @@ export default class SimpleCalendar extends Application{
             this.loadNoteCategories();
         }
         this.loadCurrentDate();
+
         if(update && this.currentYear?.time.timeKeeper.getStatus() !== TimeKeeperStatus.Started ) {
             this.updateApp();
         }

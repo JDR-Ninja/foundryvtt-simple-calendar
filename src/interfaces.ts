@@ -44,6 +44,12 @@ export interface PermissionMatrix {
     users?: string[]
 }
 
+export interface CalendarConfiguration {
+    name: string;
+    generalSettings: GeneralSettings;
+    year: YearConfig;
+}
+
 export interface CalendarTemplate {
     isGM: boolean;
     changeDateTime: boolean;

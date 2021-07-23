@@ -13,6 +13,7 @@ export const ModuleSocketName = `module.${ModuleName}`;
  */
 export enum SettingNames {
     CalendarConfigurationMenu= 'calendar-configuration-menu',
+    CalendarConfiguration = 'calendar-configuration',
     YearConfiguration = 'year-config',
     WeekdayConfiguration = 'weekday-config',
     MonthConfiguration = 'month-config',

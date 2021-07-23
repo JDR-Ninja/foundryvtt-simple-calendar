@@ -1,6 +1,7 @@
 import Year from "./year";
 import {Logger} from "./logging";
 import {
+    CalendarConfiguration,
     CurrentDateConfig,
     GeneralSettings,
     LeapYearConfig,
@@ -25,6 +26,7 @@ import Moon from "./moon";
 import Hook from "./hook";
 import {SimpleCalendarConfiguration} from "./simple-calendar-configuration";
 import GameSockets from "./game-sockets";
+import Calendar from "./calendar";
 
 export class GameSettings {
     /**
@@ -88,6 +90,13 @@ export class GameSettings {
             config: false,
             type: Object,
             onChange: SimpleCalendar.instance.settingUpdate.bind(SimpleCalendar.instance, true, 'general')
+        });
+        (<Game>game).settings.register(ModuleName, SettingNames.CalendarConfiguration, {
+            name: "Calendar Configuration",
+            scope: "world",
+            config: false,
+            type: Array,
+            onChange: SimpleCalendar.instance.settingUpdate.bind(SimpleCalendar.instance, true, 'calendar')
         });
         (<Game>game).settings.register(ModuleName, SettingNames.YearConfiguration, {
             name: "Year Configuration",
@@ -212,6 +221,23 @@ export class GameSettings {
      */
     static LoadGeneralSettings(): GeneralSettings {
         return <GeneralSettings>(<Game>game).settings.get(ModuleName, SettingNames.GeneralConfiguration);
+    }
+
+    /**
+     * Loads the month configuration from the game world settings
+     * @return {Array.<CalendarConfiguration>}
+     */
+    static LoadCalendarConfiguration(): CalendarConfiguration[] {
+        let returnData: CalendarConfiguration[] = [];
+        let calendars = <any[]>(<Game>game).settings.get(ModuleName, SettingNames.CalendarConfiguration);
+        if(calendars && calendars.length) {
+            if (Array.isArray(calendars[0])) {
+                returnData = <CalendarConfiguration[]>calendars[0];
+            } else {
+                returnData = <CalendarConfiguration[]>calendars;
+            }
+        }
+        return returnData;
     }
 
     /**
@@ -409,6 +435,24 @@ export class GameSettings {
             }
         } else {
             Logger.error('Unable to save current date, no current year found.');
+        }
+        return false;
+    }
+
+    static async SaveCalendarConfiguration(calendar: Calendar[]){
+        if(GameSettings.IsGm()){
+            Logger.debug(`Saving calendar configurations.`);
+            const currentCalConfig = JSON.stringify(GameSettings.LoadCalendarConfiguration());
+            const newConfig: CalendarConfiguration[] = calendar.map(c => { return {
+                name: c.name,
+                generalSettings: c.generalSettings,
+                year: c.year.config
+            }; });
+            if(currentCalConfig !== JSON.stringify(newConfig)){
+                return (<Game>game).settings.set(ModuleName, SettingNames.CalendarConfiguration, newConfig).then(() => {return true;});
+            } else {
+                Logger.debug('Calendar configuration has not changed, not updating settings');
+            }
         }
         return false;
     }

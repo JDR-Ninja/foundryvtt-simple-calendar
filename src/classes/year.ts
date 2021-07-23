@@ -4,7 +4,7 @@ import {
     DateTimeParts,
     DayTemplate,
     GeneralSettings,
-    PermissionMatrix,
+    PermissionMatrix, YearConfig,
     YearTemplate
 } from "../interfaces";
 import {Logger} from "./logging";
@@ -158,6 +158,23 @@ export default class Year {
                 this.gameSystem = GameSystems.Other;
                 break;
         }
+    }
+
+    /**
+     * Generate the config for the year
+     */
+    get config(): YearConfig{
+        return {
+            numericRepresentation: this.numericRepresentation,
+            yearZero: this.yearZero,
+            firstWeekday: this.firstWeekday,
+            showWeekdayHeadings: this.showWeekdayHeadings,
+            prefix: this.prefix,
+            postfix: this.postfix,
+            yearNames: this.yearNames,
+            yearNamingRule: this.yearNamingRule,
+            yearNamesStart: this.yearNamesStart
+        };
     }
 
     /**
